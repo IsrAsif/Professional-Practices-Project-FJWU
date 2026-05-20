@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FJWU Job Readiness Analysis | Capstone Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: rgba(255,255,255,0.07);
+    --accent: #e8c56d;
+    --accent2: #7c6fe0;
+    --accent3: #5eb8a0;
+    --accent4: #e07c7c;
+    --text: #f0eee8;
+    --muted: #7a7a8a;
+    --glow: rgba(232,197,109,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── BACKGROUND ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 10%, rgba(124,111,224,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 80%, rgba(94,184,160,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(232,197,109,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── NOISE TEXTURE ─── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 2rem; }
+
+  /* ─── HEADER ─── */
+  header {
+    padding: 5rem 0 4rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .institution-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(232,197,109,0.08);
+    border: 1px solid rgba(232,197,109,0.2);
+    border-radius: 100px;
+    padding: 0.4rem 1.2rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .institution-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .github-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--accent);
+    color: #0a0a0f;
+    padding: 0.75rem 1.8rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .github-btn:hover {
+    background: #f5d48a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(232,197,109,0.3);
+  }
+
+  .github-btn svg { width: 18px; height: 18px; }
+
+  /* ─── DIVIDER ─── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), var(--accent) 50%, var(--border), transparent);
+    margin: 0.5rem 0 4rem;
+  }
+
+  /* ─── SECTION HEADINGS ─── */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-desc {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 520px;
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 3rem;
+  }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 5rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: background 0.2s;
+  }
+
+  .stat-card:hover { background: var(--surface2); }
+
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ─── CHARTS GRID ─── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 5rem;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.8rem;
+    transition: border-color 0.3s;
+  }
+
+  .chart-card:hover { border-color: rgba(232,197,109,0.2); }
+
+  .chart-card.wide { grid-column: 1 / -1; }
+
+  .chart-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+
+  .chart-sub {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-wrap { position: relative; height: 280px; }
+  .chart-wrap.tall { height: 340px; }
+
+  /* ─── TEAM SECTION ─── */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 5rem;
+  }
+
+  .member-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.2s;
+  }
+
+  .member-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .member-card:nth-child(1)::before { background: var(--accent2); }
+  .member-card:nth-child(2)::before { background: var(--accent3); }
+  .member-card:nth-child(3)::before { background: var(--accent); }
+  .member-card:nth-child(4)::before { background: var(--accent4); }
+  .member-card:nth-child(5)::before { background: #7eb8e0; }
+
+  .member-card:hover {
+    border-color: rgba(232,197,109,0.25);
+    transform: translateY(-3px);
+  }
+
+  .member-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 auto 0.8rem;
+    background: var(--surface2);
+  }
+
+  .member-card:nth-child(1) .member-avatar { background: rgba(124,111,224,0.15); color: var(--accent2); }
+  .member-card:nth-child(2) .member-avatar { background: rgba(94,184,160,0.15); color: var(--accent3); }
+  .member-card:nth-child(3) .member-avatar { background: rgba(232,197,109,0.15); color: var(--accent); }
+  .member-card:nth-child(4) .member-avatar { background: rgba(224,124,124,0.15); color: var(--accent4); }
+  .member-card:nth-child(5) .member-avatar { background: rgba(126,184,224,0.15); color: #7eb8e0; }
+
+  .member-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .member-roll {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .member-role {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 100px;
+    display: inline-block;
+  }
+
+  .member-card:nth-child(1) .member-role { background: rgba(124,111,224,0.12); color: var(--accent2); }
+  .member-card:nth-child(2) .member-role { background: rgba(94,184,160,0.12); color: var(--accent3); }
+  .member-card:nth-child(3) .member-role { background: rgba(232,197,109,0.12); color: var(--accent); }
+  .member-card:nth-child(4) .member-role { background: rgba(224,124,124,0.12); color: var(--accent4); }
+  .member-card:nth-child(5) .member-role { background: rgba(126,184,224,0.12); color: #7eb8e0; }
+
+  .task-list {
+    list-style: none;
+    text-align: left;
+  }
+
+  .task-list li {
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .task-list li:last-child { border-bottom: none; }
+
+  .task-list li::before {
+    content: '▸';
+    color: var(--accent);
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    margin-top: 2px;
+  }
+
+  /* ─── KEY FINDINGS ─── */
+  .findings-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 5rem;
+  }
+
+  .finding-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.3s;
+  }
+
+  .finding-card:hover { border-color: rgba(232,197,109,0.2); }
+
+  .finding-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .finding-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .finding-text {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .highlight { color: var(--accent); font-weight: 600; }
+  .highlight2 { color: var(--accent3); font-weight: 600; }
+  .highlight3 { color: var(--accent4); font-weight: 600; }
+
+  /* ─── METHODOLOGY ─── */
+  .method-timeline {
+    display: flex;
+    gap: 0;
+    margin-bottom: 5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .method-step {
+    flex: 1;
+    min-width: 160px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.5rem 1rem;
+    position: relative;
+    text-align: center;
+  }
+
+  .method-step:first-child { border-radius: 12px 0 0 12px; }
+  .method-step:last-child { border-radius: 0 12px 12px 0; }
+
+  .method-step:not(:last-child) {
+    border-right: none;
+  }
+
+  .method-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    margin-bottom: 0.5rem;
+  }
+
+  .method-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .method-desc {
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2.5rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .footer-info { font-size: 0.8rem; color: var(--muted); }
+  .footer-info strong { color: var(--text); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 900px) {
+    .team-grid { grid-template-columns: repeat(3, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .charts-grid .chart-card.wide { grid-column: 1; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .findings-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .team-grid { grid-template-columns: 1fr 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .findings-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; text-align: center; }
+    h1 { font-size: 2.2rem; }
+  }
+
+  /* ─── ANIMATIONS ─── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(24px);
+    animation: fadeUp 0.7s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in:nth-child(1) { animation-delay: 0.1s; }
+  .fade-in:nth-child(2) { animation-delay: 0.2s; }
+  .fade-in:nth-child(3) { animation-delay: 0.3s; }
+  .fade-in:nth-child(4) { animation-delay: 0.4s; }
+  .fade-in:nth-child(5) { animation-delay: 0.5s; }
+
+  section { margin-bottom: 5rem; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ─── HEADER ─── -->
+  <header>
+    <div class="institution-badge">Fatima Jinnah Women University · CS 2025</div>
+    <h1>Degree vs. Skill:<br><em>Are FJWU Students</em><br>Truly Job-Ready?</h1>
+    <p class="subtitle">A Data Analytics Perspective on Skills vs Academic Performance — Survey of 108 FJWU Students</p>
+    <a href="https://github.com/MariaYasmeen/Professional-Practices-Project-FJWU" target="_blank" class="github-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      View on GitHub
+    </a>
+  </header>
+
+  <div class="divider"></div>
+
+  <!-- ─── STATS ─── -->
+  <div class="stats-row fade-in">
+    <div class="stat-card">
+      <div class="stat-num">108</div>
+      <div class="stat-label">Survey Responses</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">5</div>
+      <div class="stat-label">Team Members</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">12</div>
+      <div class="stat-label">Variables Analyzed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">4</div>
+      <div class="stat-label">Analysis Domains</div>
+    </div>
+  </div>
+
+  <!-- ─── CHARTS ─── -->
+  <section>
+    <div class="section-label">02 — Exploratory Data Analysis</div>
+    <h2 class="section-title">Survey Insights</h2>
+    <p class="section-desc">Key distributions and patterns discovered from the 108-response dataset collected from FJWU Computer Science students.</p>
+
+    <div class="charts-grid">
+
+      <!-- CGPA Distribution -->
+      <div class="chart-card fade-in">
+        <div class="chart-title">CGPA Distribution</div>
+        <div class="chart-sub">Academic performance across surveyed students</div>
+        <div class="chart-wrap">
+          <canvas id="cgpaChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Self-Rated Job Readiness -->
+      <div class="chart-card fade-in">
+        <div class="chart-title">Self-Rated Job Readiness</div>
+        <div class="chart-sub">How ready do students feel for employment?</div>
+        <div class="chart-wrap">
+          <canvas id="readinessChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Skills vs CGPA -->
+      <div class="chart-card fade-in">
+        <div class="chart-title">Technical Skills Proficiency</div>
+        <div class="chart-sub">Self-reported skill levels across key CS domains</div>
+        <div class="chart-wrap">
+          <canvas id="skillsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Internship / Portfolio -->
+      <div class="chart-card fade-in">
+        <div class="chart-title">Industry Exposure</div>
+        <div class="chart-sub">Internships, projects & professional experience</div>
+        <div class="chart-wrap">
+          <canvas id="exposureChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Gap Analysis Wide -->
+      <div class="chart-card wide fade-in">
+        <div class="chart-title">Academic Performance vs Practical Skills — Gap Analysis</div>
+        <div class="chart-sub">Comparing CGPA-based academic scores against practical skill self-assessments by category</div>
+        <div class="chart-wrap tall">
+          <canvas id="gapChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── KEY FINDINGS ─── -->
+  <section>
+    <div class="section-label">03 — Key Findings</div>
+    <h2 class="section-title">What the Data Reveals</h2>
+    <p class="section-desc">Core insights from statistical analysis and NLP processing of 108 FJWU CS student responses.</p>
+
+    <div class="findings-grid">
+      <div class="finding-card fade-in">
+        <div class="finding-icon">📊</div>
+        <div class="finding-title">Academic-Skills Disconnect</div>
+        <div class="finding-text">Students with <span class="highlight">high CGPAs (3.5+)</span> do not consistently show higher practical skills, suggesting academic grades alone are a weak predictor of job readiness.</div>
+      </div>
+      <div class="finding-card fade-in">
+        <div class="finding-icon">💼</div>
+        <div class="finding-title">Low Industry Exposure</div>
+        <div class="finding-text"><span class="highlight3">68%</span> of respondents had never completed an internship. Students with even one internship rated their readiness <span class="highlight2">2.1× higher</span> than peers without.</div>
+      </div>
+      <div class="finding-card fade-in">
+        <div class="finding-icon">🛠️</div>
+        <div class="finding-title">Practical Skill Gaps</div>
+        <div class="finding-text">Programming and DSA skills are rated moderate-to-high, but <span class="highlight3">communication, project management, and DevOps</span> remain critically underdeveloped.</div>
+      </div>
+      <div class="finding-card fade-in">
+        <div class="finding-icon">🤖</div>
+        <div class="finding-title">NLP Sentiment Analysis</div>
+        <div class="finding-text">Open-ended responses showed predominantly <span class="highlight">neutral-to-negative</span> sentiment around job market confidence, citing "lack of real projects" as the top concern.</div>
+      </div>
+      <div class="finding-card fade-in">
+        <div class="finding-icon">🎓</div>
+        <div class="finding-title">Certification Effect</div>
+        <div class="finding-text">Students with external certifications (Coursera, HackerRank, etc.) scored <span class="highlight2">significantly higher</span> on practical skill metrics, suggesting self-learning fills curriculum gaps.</div>
+      </div>
+      <div class="finding-card fade-in">
+        <div class="finding-icon">⚡</div>
+        <div class="finding-title">Top Skill Demand Mismatch</div>
+        <div class="finding-text">Industry-demanded skills like <span class="highlight">cloud computing, APIs, and agile methodology</span> are rarely covered in coursework yet appear in nearly every job listing reviewed.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── METHODOLOGY ─── -->
+  <section>
+    <div class="section-label">04 — Methodology</div>
+    <h2 class="section-title">Research Pipeline</h2>
+    <p class="section-desc">A structured, reproducible data analytics workflow from survey design to actionable insights.</p>
+
+    <div class="method-timeline">
+      <div class="method-step">
+        <div class="method-num">STEP 01</div>
+        <div class="method-name">Survey Design</div>
+        <div class="method-desc">Google Form with 108 responses collected across FJWU CS cohort</div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">STEP 02</div>
+        <div class="method-name">Data Cleaning & EDA</div>
+        <div class="method-desc">Manual & automated wrangling; null handling, normalization, overall analysis (Insa)</div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">STEP 03</div>
+        <div class="method-name">EDA & Stats</div>
+        <div class="method-desc">Descriptive stats, distributions, correlation matrices, deep analysis (Eman)</div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">STEP 04</div>
+        <div class="method-name">NLP Analysis</div>
+        <div class="method-desc">Sentiment analysis & keyword extraction on open-ended responses (Zunaira)</div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">STEP 05</div>
+        <div class="method-name">Reporting</div>
+        <div class="method-desc">Research paper, charts & documentation (Maria)</div>
+      </div>
+      <div class="method-step">
+        <div class="method-num">STEP 06</div>
+        <div class="method-name">Interface</div>
+        <div class="method-desc">Dashboard & interactive UI for non-technical users (Isra)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TEAM ─── -->
+  <section>
+    <div class="section-label">05 — The Team</div>
+    <h2 class="section-title">Project Members</h2>
+    <p class="section-desc">Five Computer Science students from FJWU, Batch 2025 — each responsible for a distinct analytical domain.</p>
+
+    <div class="team-grid">
+
+      <div class="member-card fade-in">
+        <div class="member-avatar">IS</div>
+        <div class="member-name">Insa Saleem</div>
+        <div class="member-roll">2025-BCS-043</div>
+        <div class="member-role">Data Engineering</div>
+        <ul class="task-list">
+          <li>Manual Collection & Digitization</li>
+          <li>Data Merging & Integration</li>
+          <li>Data Cleaning & Wrangling</li>
+          <li>Overall Analysis</li>
+        </ul>
+      </div>
+
+      <div class="member-card fade-in">
+        <div class="member-avatar">EF</div>
+        <div class="member-name">Eman Fatima</div>
+        <div class="member-roll">2025-BCS-025</div>
+        <div class="member-role">Statistical Analysis</div>
+        <ul class="task-list">
+          <li>Exploratory Data Analysis</li>
+          <li>Descriptive Statistics</li>
+          <li>Correlation & Regression</li>
+          <li>Deep Analysis</li>
+        </ul>
+      </div>
+
+      <div class="member-card fade-in">
+        <div class="member-avatar">ZT</div>
+        <div class="member-name">Zunaira Tariq</div>
+        <div class="member-roll">2025-BCS-095</div>
+        <div class="member-role">NLP & Applied</div>
+        <ul class="task-list">
+          <li>NLP Sentiment Analysis</li>
+          <li>Keyword Extraction</li>
+          <li>Performance Metrics</li>
+          <li>Applied Analysis</li>
+        </ul>
+      </div>
+
+      <div class="member-card fade-in">
+        <div class="member-avatar">MY</div>
+        <div class="member-name">Maria Yasmeen</div>
+        <div class="member-roll">2025-BCS-059</div>
+        <div class="member-role">Project Lead</div>
+        <ul class="task-list">
+          <li>Technical Writing</li>
+          <li>Research Paper Drafting</li>
+          <li>Report Generation</li>
+          <li>Presentation & Charts</li>
+        </ul>
+      </div>
+
+      <div class="member-card fade-in">
+        <div class="member-avatar">IA</div>
+        <div class="member-name">Isra Asif</div>
+        <div class="member-roll">2025-BCS-045</div>
+        <div class="member-role">Interface Design</div>
+        <ul class="task-list">
+          <li>Presentation Design</li>
+          <li>Result Consolidation</li>
+          <li>Interactive Dashboard</li>
+          <li>React / PHP Interface</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    <div class="footer-info">
+      <strong>Capstone Project — BCS Batch 2025</strong><br>
+      Fatima Jinnah Women University, Rawalpindi
+    </div>
+    <a href="https://github.com/MariaYasmeen/Professional-Practices-Project-FJWU" target="_blank" class="github-btn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      GitHub Repository
+    </a>
+  </footer>
+
+</div>
+
+<script>
+Chart.defaults.color = '#7a7a8a';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+const ACCENT   = '#e8c56d';
+const ACCENT2  = '#7c6fe0';
+const ACCENT3  = '#5eb8a0';
+const ACCENT4  = '#e07c7c';
+const ACCENT5  = '#7eb8e0';
+
+// ── CGPA Distribution ──
+new Chart(document.getElementById('cgpaChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2.0–2.5', '2.5–3.0', '3.0–3.5', '3.5–4.0'],
+    datasets: [{
+      label: 'Students',
+      data: [8, 22, 45, 33],
+      backgroundColor: [
+        'rgba(224,124,124,0.7)',
+        'rgba(232,197,109,0.7)',
+        'rgba(94,184,160,0.7)',
+        'rgba(124,111,224,0.7)'
+      ],
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { stepSize: 10 } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// ── Self-Rated Job Readiness (Doughnut) ──
+new Chart(document.getElementById('readinessChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Not Ready', 'Somewhat Ready', 'Moderately Ready', 'Very Ready'],
+    datasets: [{
+      data: [24, 38, 31, 15],
+      backgroundColor: [ACCENT4, ACCENT, ACCENT3, ACCENT2],
+      borderWidth: 2,
+      borderColor: '#111118',
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { boxWidth: 12, padding: 14, font: { size: 11 } }
+      }
+    },
+    cutout: '62%'
+  }
+});
+
+// ── Technical Skills (Radar) ──
+new Chart(document.getElementById('skillsChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Programming', 'DSA', 'Databases', 'Web Dev', 'AI/ML', 'Communication', 'DevOps', 'Project Mgmt'],
+    datasets: [
+      {
+        label: 'Avg Proficiency (1–5)',
+        data: [3.8, 3.2, 3.5, 3.4, 2.6, 2.9, 2.1, 2.4],
+        backgroundColor: 'rgba(232,197,109,0.12)',
+        borderColor: ACCENT,
+        pointBackgroundColor: ACCENT,
+        pointRadius: 4,
+        borderWidth: 2
+      },
+      {
+        label: 'Industry Demand (1–5)',
+        data: [4.2, 4.0, 4.0, 4.3, 4.1, 4.5, 3.8, 4.2],
+        backgroundColor: 'rgba(94,184,160,0.08)',
+        borderColor: ACCENT3,
+        pointBackgroundColor: ACCENT3,
+        pointRadius: 4,
+        borderWidth: 2,
+        borderDash: [4, 4]
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { boxWidth: 12, font: { size: 11 } } } },
+    scales: {
+      r: {
+        min: 0, max: 5,
+        grid: { color: 'rgba(255,255,255,0.06)' },
+        ticks: { stepSize: 1, font: { size: 9 }, backdropColor: 'transparent' },
+        pointLabels: { font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// ── Industry Exposure (Horizontal Bar) ──
+new Chart(document.getElementById('exposureChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Has Internship', 'Has Portfolio', 'Has GitHub', 'Has Certification', 'Freelance Work', 'Open Source Contrib.'],
+    datasets: [{
+      label: '% of Students',
+      data: [32, 41, 55, 38, 18, 12],
+      backgroundColor: [ACCENT2, ACCENT3, ACCENT, ACCENT4, ACCENT5, 'rgba(255,255,255,0.3)'],
+      borderRadius: 5,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        max: 100,
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { callback: v => v + '%' }
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ── Gap Analysis (Grouped Bar) ──
+new Chart(document.getElementById('gapChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Programming', 'Data Structures', 'Databases', 'Web Dev', 'AI/ML', 'Communication', 'DevOps', 'Project Mgmt', 'Cloud', 'Agile'],
+    datasets: [
+      {
+        label: 'Student Self-Assessment',
+        data: [3.8, 3.2, 3.5, 3.4, 2.6, 2.9, 2.1, 2.4, 1.9, 2.2],
+        backgroundColor: 'rgba(232,197,109,0.75)',
+        borderRadius: 4,
+        borderSkipped: false,
+      },
+      {
+        label: 'Industry Requirement',
+        data: [4.2, 4.0, 4.0, 4.3, 4.1, 4.5, 3.8, 4.2, 4.0, 3.9],
+        backgroundColor: 'rgba(94,184,160,0.65)',
+        borderRadius: 4,
+        borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { boxWidth: 14, font: { size: 12 } } }
+    },
+    scales: {
+      y: {
+        min: 0, max: 5,
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { stepSize: 1 }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>
